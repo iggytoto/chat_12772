@@ -28,7 +28,7 @@ public class Server {
                         String command;
                         while (true){
                             Message.sendMessage(user, "Для регистрации /reg, \n Для авторизации /login");
-                            command = user.getIs().readUTF().toLowerCase();
+                            command = (Message.readMessage(user)).getMsg().toLowerCase();
                             if(command.equals("/reg")){
                                 user.reg();
                                 break;
@@ -40,15 +40,18 @@ public class Server {
                         System.out.println(user.getName()+" подключился");
                         Message.sendMessage(user, user.getName() + " добро пожаловать на сервер!");
                         sendOnlineUsers(users);
+                        Message.loadHistoryMessage(user);
                         while (true){
-                            message = user.getIs().readUTF();
+                            message = (Message.readMessage(user)).getMsg();
                             System.out.println(user.getName()+": "+message);
+                            Message msg = new Message(message, user.getId());
+                            msg.save();
                             for (User user1 : users) {
                                 if(user == user1) continue;
                                 Message.sendMessage(user1, user.getName()+": "+message);
                             }
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         System.out.println(user.getName()+" отключился");
                         users.remove(user);
                         sendOnlineUsers(users);
@@ -64,9 +67,12 @@ public class Server {
 
 
     public static void sendOnlineUsers(ArrayList<User> users){
-        JSONArray jsonArray = new JSONArray(); // Список имён пользователей
+        JSONArray jsonArray = new JSONArray(); // Список пользователей
+        JSONObject jsonUser = new JSONObject();
         users.forEach(user -> {
-            jsonArray.add(user.getName());
+            jsonUser.put("name", user.getName());
+            jsonUser.put("id", user.getId());
+            jsonArray.add(jsonUser);
         });
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("onlineUsers", jsonArray);

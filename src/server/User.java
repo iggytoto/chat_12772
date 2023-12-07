@@ -44,22 +44,22 @@ public class User {
         return out;
     }
 
-    public boolean reg() throws IOException {
+    public boolean reg() throws Exception {
         Message.sendMessage(this, "Введите имя: ");
-        name = this.getIs().readUTF();
+        name = (Message.readMessage(this)).getMsg();
         Message.sendMessage(this, "Введите Email: ");
-        String email = this.getIs().readUTF().toLowerCase();
+        String email = (Message.readMessage(this)).getMsg().toLowerCase();
         Message.sendMessage(this, "Введите пароль: ");
-        String pass = this.getIs().readUTF();
+        String pass = (Message.readMessage(this)).getMsg();
         Database.update("INSERT INTO users (name, email, pass) VALUES ('"+name+"','"+email+"','"+pass+"')");
         this.setName(name);
         return true;
     }
-    public boolean login() throws IOException {
+    public boolean login() throws Exception {
         Message.sendMessage(this, "Введите Email: ");
-        String email = this.getIs().readUTF().toLowerCase();
+        String email = (Message.readMessage(this)).getMsg().toLowerCase();
         Message.sendMessage(this, "Введите пароль: ");
-        String pass = this.getIs().readUTF();
+        String pass = (Message.readMessage(this)).getMsg();
         ResultSet resultSet = Database.query("SELECT * FROM users WHERE email='"+email+"' AND pass='"+pass+"'");
         try {
             if(resultSet.next()){
