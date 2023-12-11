@@ -14,12 +14,24 @@ public class Message {
     private int toId;
 
     public Message(String msg, int fromId) {
+        this(msg, fromId, 0);
+    }
+    public Message(String msg, int fromId, int toId) {
         this.msg = msg;
         this.fromId = fromId;
+        this.toId = toId;
     }
 
     public String getMsg() {
         return msg;
+    }
+
+    public int getToId() {
+        return toId;
+    }
+
+    public int getFromId() {
+        return fromId;
     }
 
     public static void sendMessage(User user, String msg) {
@@ -32,10 +44,12 @@ public class Message {
         }
     }
     public void save(){
-        Database.update("INSERT INTO messages (msg, from_id) VALUES ('"+msg+"', '"+fromId+"')");
+        String[] params = {msg, String.valueOf(fromId), String.valueOf(toId)};
+        Database.update("INSERT INTO messages (msg, from_id, to_id) VALUES (?, ?, ?)", params);
     }
     public static void loadHistoryMessage(User user){
-        ResultSet resultSet = Database.query("SELECT * FROM messages WHERE to_id=0");
+        String[] params = {"0"};
+        ResultSet resultSet = Database.query("SELECT * FROM messages WHERE to_id=?", params);
         try {
             while(resultSet.next()){
                 sendMessage(user, resultSet.getString("msg"));
@@ -49,7 +63,11 @@ public class Message {
         String msg = user.getIs().readUTF();
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject) jsonParser.parse(msg);
-        Message message = new Message(jsonObject.get("msg").toString(), user.getId());
+        Message message = new Message(
+                jsonObject.get("msg").toString(),  // Сообщение
+                user.getId(), // От кого
+                Integer.parseInt(jsonObject.get("to_id").toString()) // Кому
+        );
         return message;
     }
 }

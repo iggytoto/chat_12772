@@ -51,16 +51,14 @@ public class User {
         String email = (Message.readMessage(this)).getMsg().toLowerCase();
         Message.sendMessage(this, "Введите пароль: ");
         String pass = (Message.readMessage(this)).getMsg();
-        Database.update("INSERT INTO users (name, email, pass) VALUES ('"+name+"','"+email+"','"+pass+"')");
+        String[] params = {name, email, pass};
+        Database.update("INSERT INTO users (name, email, pass) VALUES (?,?,?)", params);
         this.setName(name);
-        return true;
+        return login(email, pass);
     }
-    public boolean login() throws Exception {
-        Message.sendMessage(this, "Введите Email: ");
-        String email = (Message.readMessage(this)).getMsg().toLowerCase();
-        Message.sendMessage(this, "Введите пароль: ");
-        String pass = (Message.readMessage(this)).getMsg();
-        ResultSet resultSet = Database.query("SELECT * FROM users WHERE email='"+email+"' AND pass='"+pass+"'");
+    public boolean login(String email, String pass){
+        String[] params = {email, pass};
+        ResultSet resultSet = Database.query("SELECT * FROM users WHERE email= ? AND pass= ?", params);
         try {
             if(resultSet.next()){
                 name = resultSet.getString("name");
@@ -75,5 +73,12 @@ public class User {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+    public boolean login() throws Exception {
+        Message.sendMessage(this, "Введите Email: ");
+        String email = (Message.readMessage(this)).getMsg().toLowerCase();
+        Message.sendMessage(this, "Введите пароль: ");
+        String pass = (Message.readMessage(this)).getMsg();
+        return login(email, pass);
     }
 }

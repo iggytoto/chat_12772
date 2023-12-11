@@ -11,7 +11,6 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class Server {
-
     public static void main(String[] args) {
         ArrayList<User> users = new ArrayList<>(); // Список онлайн пользователей
         try {
@@ -28,9 +27,9 @@ public class Server {
                         String command;
                         while (true){
                             Message.sendMessage(user, "Для регистрации /reg, \n Для авторизации /login");
-                            command = (Message.readMessage(user)).getMsg().toLowerCase();
-                            if(command.equals("/reg")){
-                                user.reg();
+                            command = (Message.readMessage(user)).getMsg().toLowerCase(); // Ждём команду от пользователя
+                            if(command.equals("/reg")){ // Если пользователь ввёл /reg
+                                user.reg(); // Вызываем метод регистрации пользователя
                                 break;
                             }else if (command.equals("/login"))
                                 if(user.login()) break;
@@ -38,16 +37,18 @@ public class Server {
                         }
 
                         System.out.println(user.getName()+" подключился");
-                        Message.sendMessage(user, user.getName() + " добро пожаловать на сервер!");
+                        Message.sendMessage(user, user.getName() + ", добро пожаловать на сервер!");
                         sendOnlineUsers(users);
                         Message.loadHistoryMessage(user);
                         while (true){
-                            message = (Message.readMessage(user)).getMsg();
+                            Message msg = Message.readMessage(user);
+                            message = msg.getMsg(); // Сообщение
+                            //int formId = msg.getFromId(); // От кого
+                            int toId = msg.getToId(); // Кому
                             System.out.println(user.getName()+": "+message);
-                            Message msg = new Message(message, user.getId());
                             msg.save();
                             for (User user1 : users) {
-                                if(user == user1) continue;
+                                if(user == user1 || (toId!=0 && toId != user1.getId())) continue;
                                 Message.sendMessage(user1, user.getName()+": "+message);
                             }
                         }
@@ -68,17 +69,17 @@ public class Server {
 
     public static void sendOnlineUsers(ArrayList<User> users){
         JSONArray jsonArray = new JSONArray(); // Список пользователей
-        JSONObject jsonUser = new JSONObject();
-        users.forEach(user -> {
-            jsonUser.put("name", user.getName());
-            jsonUser.put("id", user.getId());
-            jsonArray.add(jsonUser);
+        users.forEach(user -> { // Перебираем пользователей
+            JSONObject jsonUser = new JSONObject(); // Создаём JSON объект для хранения информации о пользователе
+            jsonUser.put("name", user.getName()); // Записываем имя пользователя
+            jsonUser.put("id", user.getId()); // Записываем ID пользователя
+            jsonArray.add(jsonUser); // Добавляем JSON объект пользователя в коллекцию JSONArray
         });
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("onlineUsers", jsonArray);
-        users.forEach(user -> {
+        JSONObject jsonObject = new JSONObject(); // JSON объект который отправится клиенту
+        jsonObject.put("onlineUsers", jsonArray); // Кладём в него список пользователей
+        users.forEach(user -> { // Перебираем всех пользователей online
             try {
-                user.getOut().writeUTF(jsonObject.toJSONString());
+                user.getOut().writeUTF(jsonObject.toJSONString()); // Отправляем каждому пользователю список
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
