@@ -1,5 +1,6 @@
-package server;
+package model;
 
+import dal.Database;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -43,13 +44,14 @@ public class Message {
             System.out.println("Ошибка при передаче сообщения пользователю "+user.getName());
         }
     }
-    public void save(){
+    public void save(Database database){
         String[] params = {msg, String.valueOf(fromId), String.valueOf(toId)};
-        Database.update("INSERT INTO messages (msg, from_id, to_id) VALUES (?, ?, ?)", params);
+        database.update("INSERT INTO messages (msg, from_id, to_id) VALUES (?, ?, ?)", params);
     }
-    public static void loadHistoryMessage(User user){
+
+    public static void loadHistoryMessage(User user,Database database){
         String[] params = {"0"};
-        ResultSet resultSet = Database.query("SELECT * FROM messages WHERE to_id=?", params);
+        ResultSet resultSet = database.query("SELECT * FROM messages WHERE to_id=?", params);
         try {
             while(resultSet.next()){
                 sendMessage(user, resultSet.getString("msg"));

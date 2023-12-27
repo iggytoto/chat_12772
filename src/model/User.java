@@ -1,4 +1,6 @@
-package server;
+package model;
+
+import dal.Database;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,7 +46,7 @@ public class User {
         return out;
     }
 
-    public boolean reg() throws Exception {
+    public boolean reg(Database database) throws Exception {
         Message.sendMessage(this, "Введите имя: ");
         name = (Message.readMessage(this)).getMsg();
         Message.sendMessage(this, "Введите Email: ");
@@ -52,21 +54,22 @@ public class User {
         Message.sendMessage(this, "Введите пароль: ");
         String pass = (Message.readMessage(this)).getMsg();
         String[] params = {name, email, pass};
-        Database.update("INSERT INTO users (name, email, pass) VALUES (?,?,?)", params);
+        database.update("INSERT INTO users (name, email, pass) VALUES (?,?,?)", params);
         this.setName(name);
-        return login(email, pass);
+        return login(email, pass, database);
     }
-    public boolean login(String email, String pass){
+
+    public boolean login(String email, String pass, Database database) {
         String[] params = {email, pass};
-        ResultSet resultSet = Database.query("SELECT * FROM users WHERE email= ? AND pass= ?", params);
+        ResultSet resultSet = database.query("SELECT * FROM users WHERE email= ? AND pass= ?", params);
         try {
-            if(resultSet.next()){
+            if (resultSet.next()) {
                 name = resultSet.getString("name");
                 int id = resultSet.getInt("id");
                 this.setName(name);
                 this.setId(id);
                 return true;
-            }else{
+            } else {
                 Message.sendMessage(this, "Неправильный логин или пароль");
                 return false;
             }
@@ -74,11 +77,12 @@ public class User {
             throw new RuntimeException(e);
         }
     }
-    public boolean login() throws Exception {
+
+    public boolean login(Database database) throws Exception {
         Message.sendMessage(this, "Введите Email: ");
         String email = (Message.readMessage(this)).getMsg().toLowerCase();
         Message.sendMessage(this, "Введите пароль: ");
         String pass = (Message.readMessage(this)).getMsg();
-        return login(email, pass);
+        return login(email, pass, database);
     }
 }

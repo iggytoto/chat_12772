@@ -1,59 +1,65 @@
 package server;
 
-import com.mysql.cj.jdbc.Driver;
+import dal.Database;
+import dal.mssql.MsSqlDatabase;
+import dal.postgresql.PostgreSqlDatabase;
+import model.Message;
+import model.User;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.*;
 import java.util.ArrayList;
 
 public class Server {
     public static void main(String[] args) {
+        final Database database = getDatabase(Database.DatabaseType.POSTGRES);
+
         ArrayList<User> users = new ArrayList<>(); // Список онлайн пользователей
         try {
             Class.forName("com.mysql.cj.jdbc.Driver").getDeclaredConstructor().newInstance();
             ServerSocket serverSocket = new ServerSocket(9123); // Открываем порт для прослушивания
             System.out.println("Сервер запущен");
-            while (true){
+            while (true) {
                 Socket socket = serverSocket.accept(); // Ожидаем подключения клиента
                 User user = new User(socket); // Создаём объект клиента
                 users.add(user); // Добавляем пользователя список онлайн пользователей
-                Thread thread = new Thread(()->{
+
+                Thread thread = new Thread(() -> {
                     String message = null;
                     try {
                         String command;
-                        while (true){
+                        while (true) {
                             Message.sendMessage(user, "Для регистрации /reg, \n Для авторизации /login");
                             command = (Message.readMessage(user)).getMsg().toLowerCase(); // Ждём команду от пользователя
-                            if(command.equals("/reg")){ // Если пользователь ввёл /reg
-                                user.reg(); // Вызываем метод регистрации пользователя
+                            if (command.equals("/reg")) { // Если пользователь ввёл /reg
+                                user.reg(database); // Вызываем метод регистрации пользователя
                                 break;
-                            }else if (command.equals("/login"))
-                                if(user.login()) break;
-                            else Message.sendMessage(user, "неверная команда");
+                            } else if (command.equals("/login"))
+                                if (user.login(database)) break;
+                                else Message.sendMessage(user, "неверная команда");
                         }
 
-                        System.out.println(user.getName()+" подключился");
+                        System.out.println(user.getName() + " подключился");
                         Message.sendMessage(user, user.getName() + ", добро пожаловать на сервер!");
                         sendOnlineUsers(users);
-                        Message.loadHistoryMessage(user);
-                        while (true){
+                        Message.loadHistoryMessage(user, database);
+                        while (true) {
                             Message msg = Message.readMessage(user);
                             message = msg.getMsg(); // Сообщение
                             //int formId = msg.getFromId(); // От кого
                             int toId = msg.getToId(); // Кому
-                            System.out.println(user.getName()+": "+message);
-                            msg.save();
+                            System.out.println(user.getName() + ": " + message);
+                            msg.save(database);
                             for (User user1 : users) {
-                                if(user == user1 || (toId!=0 && toId != user1.getId())) continue;
-                                Message.sendMessage(user1, user.getName()+": "+message);
+                                if (user == user1 || (toId != 0 && toId != user1.getId())) continue;
+                                Message.sendMessage(user1, user.getName() + ": " + message);
                             }
                         }
                     } catch (Exception e) {
-                        System.out.println(user.getName()+" отключился");
+                        System.out.println(user.getName() + " отключился");
                         users.remove(user);
                         sendOnlineUsers(users);
                     }
@@ -65,9 +71,20 @@ public class Server {
         }
     }
 
+    private static Database getDatabase(Database.DatabaseType type) {
+        switch (type) {
+            case POSTGRES -> {
+                return new PostgreSqlDatabase();
+            }
+            case MSSQL -> {
+                return new MsSqlDatabase();
+            }
+            default -> throw new IllegalArgumentException("Неизвестный тип бд запрошен.");
+        }
+    }
 
 
-    public static void sendOnlineUsers(ArrayList<User> users){
+    public static void sendOnlineUsers(ArrayList<User> users) {
         JSONArray jsonArray = new JSONArray(); // Список пользователей
         users.forEach(user -> { // Перебираем пользователей
             JSONObject jsonUser = new JSONObject(); // Создаём JSON объект для хранения информации о пользователе
