@@ -11,5 +11,10 @@
     <orderEntry type="library" name="mysql-connector-j-8.2.0" level="project" />
     <orderEntry type="library" name="googlecode.json.simple" level="project" />
     <orderEntry type="library" name="mysql.connector.java" level="project" />
+    <orderEntry type="library" name="apache.poi" level="project" />
+    <orderEntry type="library" name="apache.poi.ooxml" level="project" />
+    <orderEntry type="library" name="jxls.jexcel" level="project" />
+    <orderEntry type="library" name="dhatim.fastexcel.reader" level="project" />
+    <orderEntry type="library" name="dhatim.fastexcel" level="project" />
   </component>
 </module>
